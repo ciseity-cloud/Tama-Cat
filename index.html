@@ -493,9 +493,9 @@ function actPlay() {
 function actClean() {
   if (!cat.alive) return;
   cat.cleanliness += 25;
-  cat.happiness += 6;
+  cat.happiness -= 6;
   clamp();
-  logMsg("You groom " + cat.name + " until the fur shines.");
+  logMsg("You groom " + cat.name + " until the fur shines, but they clearly resent it.");
   beep(850, 80);
   sicknessCheck();
   tick();
@@ -543,7 +543,7 @@ function actMed() {
     return;
   }
   cat.sick = false;
-  cat.happiness += 10;
+  cat.happiness -= 10;
   clamp();
   logMsg("You give " + cat.name + " medicine. It looks better already.");
   beep(1100, 120);
