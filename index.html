@@ -492,8 +492,8 @@ function actPlay() {
 
 function actClean() {
   if (!cat.alive) return;
-  cat.cleanliness += 25;
-  cat.happiness -= 6;
+cat.cleanliness += 25;
+cat.happiness -= 4;
   clamp();
   logMsg("You groom " + cat.name + " until the fur shines, but they clearly resent it.");
   beep(850, 80);
