@@ -391,11 +391,8 @@ function applyTimeDecay() {
 if (cat.isNapping && cat.napStart) {
   const napMinutes = Math.floor((now - cat.napStart) / (1000 * 60));
 
-if (cat.isNapping && cat.napStart) {
-  const napMinutes = Math.floor((now - cat.napStart) / (1000 * 60));
-
   // Energy gain: 10 minutes = +50 energy
-  const energyGain = napMinutes * 5; 
+  const energyGain = Math.floor(napMinutes / 10) * 50;
 
   // NEW: Per-minute nap drain
   const hungerDrain = napMinutes * 1;        // -1 hunger per minute
@@ -416,6 +413,14 @@ if (cat.isNapping && cat.napStart) {
     );
   }
 
+  // Cap energy
+  if (cat.energy >= 100) {
+    cat.energy = 100;
+    cat.isNapping = false;
+    logMsg(cat.name + " wakes up fully rested.");
+    beep(900, 120);
+  }
+}
   // Cap energy
   if (cat.energy >= 100) {
     cat.energy = 100;
