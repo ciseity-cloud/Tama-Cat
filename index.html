@@ -387,18 +387,18 @@ function applyTimeDecay() {
     cat.cleanliness -= 3 * chunks;
     cat.happiness -= 3 * chunks;
   }
-
 if (cat.isNapping && cat.napStart) {
   const napMinutes = Math.floor((now - cat.napStart) / (1000 * 60));
 
+  // Energy gain: 10 minutes = +50 energy
+  const energyGain = Math.floor(napMinutes / 10) * 50;
+
+  // NEW: Per-minute nap drain
+  const hungerDrain = napMinutes * 1;        // -1 hunger per minute
+  const cleanDrain  = napMinutes * 2;        // -2 cleanliness per minute
+
   if (napMinutes > 0) {
-    // Continuous gain: +5 energy per minute
-    const energyGain = napMinutes * 5;
-
-    // Per-minute nap drain
-    const hungerDrain = napMinutes * 1;     // -1 hunger per minute
-    const cleanDrain  = napMinutes * 2;     // -2 cleanliness per minute
-
+    // Apply gains + drains
     cat.energy += energyGain;
     cat.hunger -= hungerDrain;
     cat.cleanliness -= cleanDrain;
@@ -407,12 +407,12 @@ if (cat.isNapping && cat.napStart) {
     cat.napStart = now;
 
     logMsg(
-      `${cat.name} slept for ${napMinutes} min: `
-      + `+${energyGain} energy, -${hungerDrain} hunger, -${cleanDrain} cleanliness.`
+      `${cat.name} slept for ${napMinutes} min: +${energyGain} energy, `
+      + `-${hungerDrain} hunger, -${cleanDrain} cleanliness.`
     );
   }
 
-  // Cap energy + auto-wake
+  // Cap energy
   if (cat.energy >= 100) {
     cat.energy = 100;
     cat.isNapping = false;
