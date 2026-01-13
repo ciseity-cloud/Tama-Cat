@@ -536,16 +536,14 @@ function render() {
   }
 
   // Stats panel
-  stats.textContent =
-    `Hunger:      ${cat.hunger}
+stats.textContent =
+  `Hunger:      ${cat.hunger}
 Energy:      ${cat.energy}
 Happiness:   ${cat.happiness}
 Cleanliness: ${cat.cleanliness}
 Sick:        ${cat.sick ? "YES" : "NO"}
 Age:         ${cat.ageDays} days
-Stage:       ${cat.stage}
-`;
-
+Stage:       ${cat.stage}`;
   // Disable actions while napping or dead
   const disable = cat.isNapping || !cat.alive;
   document.getElementById("feed").disabled = disable;
