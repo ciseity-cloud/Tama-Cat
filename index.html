@@ -412,56 +412,95 @@ function randomChoice(arr) {
 
 /* ---------------- RENDER ---------------- */
 function getMoodAndArt() {
+  // Dead always overrides everything
   if (!cat.alive) {
-    return { art: art[`${cat.stage}_dead`] || art.kitten_dead, mood: "dead" };
+    return {
+      art: art[`${cat.stage}_dead`] || art.kitten_dead,
+      mood: "dead"
+    };
   }
 
+  // Napping overrides mood
   if (cat.isNapping) {
-    return { art: art[`${cat.stage}_sleepy`] || art.kitten_sleepy, mood: "sleepy" };
+    return {
+      art: art[`${cat.stage}_sleepy`] || art.kitten_sleepy,
+      mood: "sleepy"
+    };
   }
 
+  // Sick override
   if (cat.sick) {
-    return { art: art[`${cat.stage}_sick`] || art.kitten_sick, mood: "sick" };
+    return {
+      art: art[`${cat.stage}_sick`] || art.kitten_sick,
+      mood: "sick"
+    };
   }
 
   // Mood priority logic
   if (cat.happiness < 20) {
-    return { art: art[`${cat.stage}_lonely`] || art.kitten_lonely, mood: "lonely" };
+    return {
+      art: art[`${cat.stage}_lonely`] || art.kitten_lonely,
+      mood: "lonely"
+    };
   }
 
   if (cat.hunger < 20) {
-    return { art: art[`${cat.stage}_hungry`] || art.kitten_hungry, mood: "hungry" };
+    return {
+      art: art[`${cat.stage}_hungry`] || art.kitten_hungry,
+      mood: "hungry"
+    };
   }
 
   if (cat.cleanliness < 20) {
-    return { art: art[`${cat.stage}_dirty`] || art.kitten_dirty, mood: "dirty" };
+    return {
+      art: art[`${cat.stage}_dirty`] || art.kitten_dirty,
+      mood: "dirty"
+    };
   }
 
   if (cat.energy < 20) {
-    return { art: art[`${cat.stage}_sleepy`] || art.kitten_sleepy, mood: "sleepy" };
+    return {
+      art: art[`${cat.stage}_sleepy`] || art.kitten_sleepy,
+      mood: "sleepy"
+    };
   }
 
   if (cat.hunger > 85) {
-    return { art: art[`${cat.stage}_full`] || art.kitten_full, mood: "full" };
+    return {
+      art: art[`${cat.stage}_full`] || art.kitten_full,
+      mood: "full"
+    };
   }
 
   if (cat.happiness > 80) {
-    return { art: art[`${cat.stage}_happy`] || art.kitten_happy, mood: "happy" };
+    return {
+      art: art[`${cat.stage}_happy`] || art.kitten_happy,
+      mood: "happy"
+    };
   }
 
   // Random fun moods for variety
   if (cat.happiness >= 50 && cat.energy >= 40) {
     const r = Math.random();
     if (r < 0.15) {
-      return { art: art[`${cat.stage}_excited`] || art.kitten_excited, mood: "happy" };
+      return {
+        art: art[`${cat.stage}_excited`] || art.kitten_excited,
+        mood: "excited"
+      };
     }
     if (r < 0.30) {
-      return { art: art[`${cat.stage}_mischief`] || art.kitten_mischief, mood: "happy" };
+      return {
+        art: art[`${cat.stage}_mischief`] || art.kitten_mischief,
+        mood: "mischief"
+      };
     }
   }
 
   // Default idle
-  return { art: art[`${cat.stage}_idle`] || art.kitten_idle, mood: "idle" };
+  return {
+    art: art[`${cat.stage}_idle`] || art.kitten_idle,
+    mood: "idle"
+  };
 }
 
 
