@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tama‑Cat v4.1</title>
+<title>Tama‑Cat v5</title>
 <style>
   body {
     background: #050608;
@@ -19,7 +19,7 @@
     border: 8px solid #666;
     border-radius: 30px;
     padding: 16px;
-    width: 340px;
+    width: 360px;
     box-shadow: 0 0 25px #000 inset, 0 0 14px #000;
   }
 
@@ -28,14 +28,16 @@
     font-size: 11px;
   }
 
-  input {
+  input, select {
     background: #111;
     border: 1px solid #444;
     color: #eee;
     padding: 2px 4px;
-    width: 140px;
     font-size: 11px;
   }
+
+  #name-input { width: 120px; }
+  #personality-select { width: 90px; }
 
   .screen {
     background: #c8f7c8;
@@ -80,7 +82,6 @@
   .buttons {
     margin-top: 8px;
     display: flex;
-    justify-content: space-between;
     flex-wrap: wrap;
     gap: 4px;
   }
@@ -109,7 +110,7 @@
   #log {
     margin-top: 6px;
     font-size: 10px;
-    height: 46px;
+    height: 60px;
     overflow-y: auto;
     white-space: normal;
   }
@@ -119,7 +120,16 @@
 
 <div class="device">
   <div id="name-box">
-    Name: <input id="name-input" placeholder="Mochi">
+    Name:
+    <input id="name-input" placeholder="Mochi">
+    Personality:
+    <select id="personality-select">
+      <option value="balanced">Balanced</option>
+      <option value="lazy">Lazy</option>
+      <option value="playful">Playful</option>
+      <option value="grumpy">Grumpy</option>
+      <option value="needy">Needy</option>
+    </select>
     <button id="start-btn">Start</button>
   </div>
 
@@ -136,6 +146,7 @@
     <button id="clean">Clean</button>
     <button id="nap">Nap</button>
     <button id="med">Med</button>
+    <button id="game">Game</button>
   </div>
 
   <div id="log"></div>
@@ -143,212 +154,271 @@
 
 <script>
 /* ---------------- ASCII ART ---------------- */
+// Each key is `${stage}_${mood}`
 const art = {
   // KITTEN
-kitten_idle: ` /\\_/\\
+  kitten_idle: ` /\\_/\\
 ( o.o )
  > ^ <`,
-
-kitten_happy: ` /\\_/\\
+  kitten_happy: ` /\\_/\\
 ( ^.^ )
  > ^ <`,
-
-kitten_hungry: ` /\\_/\\
+  kitten_hungry: ` /\\_/\\
 ( ;.; )
  > ^ <`,
-
-kitten_sleepy: ` /\\_/\\
+  kitten_sleepy: ` /\\_/\\
 (-.- ) zZ
  > ^ <`,
-
-kitten_angry: ` /\\_/\\
+  kitten_angry: ` /\\_/\\
 ( >.< )
  > ^ <`,
-
-kitten_dirty: ` /\\_/\\
+  kitten_dirty: ` /\\_/\\
 ( o.o ) ~
  > ^ <`,
-
-kitten_full: ` /\\_/\\
+  kitten_full: ` /\\_/\\
 ( -w- )
  > ^ <`,
-
-kitten_sick: ` /\\_/\\
+  kitten_sick: ` /\\_/\\
 ( x.x )
  > ^ <`,
-
-kitten_lonely: ` /\\_/\\
+  kitten_lonely: ` /\\_/\\
 ( ; _ ; )
  > ^ <`,
-
-kitten_excited: ` /\\_/\\
+  kitten_excited: ` /\\_/\\
 ( ^o^ )
  > ^ <`,
-
-kitten_mischief: ` /\\_/\\
+  kitten_mischief: ` /\\_/\\
 ( ^_^ )
  > v <`,
-
-kitten_dead: ` /\\_/\\
+  kitten_dead: ` /\\_/\\
 (x_x )
  > ^ <`,
+
   // ADULT
-adult_idle: ` /\\___/\\
+  adult_idle: ` /\\___/\\
 ( 0   0 )
  (  =^=  )`,
-
-adult_happy: ` /\\___/\\
+  adult_happy: ` /\\___/\\
 ( ^   ^ )
  (  =^=  )`,
-
-adult_hungry: ` /\\___/\\
+  adult_hungry: ` /\\___/\\
 ( ;   ; )
  (  =^=  )`,
-
-adult_sleepy: ` /\\___/\\
+  adult_sleepy: ` /\\___/\\
 ( -   - ) zZ
  (  =^=  )`,
-
-adult_angry: ` /\\___/\\
+  adult_angry: ` /\\___/\\
 ( >   < )
  (  =^=  )`,
-
-adult_dirty: ` /\\___/\\
+  adult_dirty: ` /\\___/\\
 ( 0   0 ) ~
  (  =^=  )`,
-
-adult_full: ` /\\___/\\
+  adult_full: ` /\\___/\\
 ( -   w )
  (  =^=  )`,
-
-adult_sick: ` /\\___/\\
+  adult_sick: ` /\\___/\\
 ( x   x )
  (  =^=  )`,
-
-adult_lonely: ` /\\___/\\
+  adult_lonely: ` /\\___/\\
 ( ;   _ )
  (  =^=  )`,
-
-adult_excited: ` /\\___/\\
+  adult_excited: ` /\\___/\\
 ( ^   o )
  (  =^=  )`,
-
-adult_mischief: ` /\\___/\\
+  adult_mischief: ` /\\___/\\
 ( ^   ^ )
  (  =v=  )`,
-
-adult_dead: ` /\\___/\\
+  adult_dead: ` /\\___/\\
 ( x   x )
  (  =^=  )`,
 
   // ELDER
-elder_idle: ` /\\___/\\
+  elder_idle: ` /\\___/\\
 ( -   - )
  (  =w=  )`,
-
-elder_happy: ` /\\___/\\
+  elder_happy: ` /\\___/\\
 ( ^   ^ )
  (  =w=  )`,
-
-elder_hungry: ` /\\___/\\
+  elder_hungry: ` /\\___/\\
 ( ;   ; )
  (  =w=  )`,
-
-elder_sleepy: ` /\\___/\\
+  elder_sleepy: ` /\\___/\\
 ( -   - ) zZ
  (  =w=  )`,
-
-elder_angry: ` /\\___/\\
+  elder_angry: ` /\\___/\\
 ( >   < )
  (  =w=  )`,
-
-elder_dirty: ` /\\___/\\
+  elder_dirty: ` /\\___/\\
 ( -   - ) ~
  (  =w=  )`,
-
-elder_full: ` /\\___/\\
+  elder_full: ` /\\___/\\
 ( -   w )
  (  =w=  )`,
-
-elder_sick: ` /\\___/\\
+  elder_sick: ` /\\___/\\
 ( x   x )
  (  =w=  )`,
-
-elder_lonely: ` /\\___/\\
+  elder_lonely: ` /\\___/\\
 ( ;   _ )
  (  =w=  )`,
-
-elder_excited: ` /\\___/\\
+  elder_excited: ` /\\___/\\
 ( ^   o )
  (  =w=  )`,
-
-elder_mischief: ` /\\___/\\
+  elder_mischief: ` /\\___/\\
 ( ^   ^ )
  (  =v=  )`,
-
-elder_dead: ` /\\___/\\
+  elder_dead: ` /\\___/\\
 ( x   x )
- (  =w=  )`,
-
-  // You can add sleepy/happy/etc versions later
-  ...
+ (  =w=  )`
 };
-/* ---------------- DIALOGUE ---------------- */
+
+/* ---------------- STAGE-SPECIFIC DIALOGUE ---------------- */
+// dialog[stage][mood] = [lines...]
 const dialog = {
-  idle: [
-    "Your tiny cat blinks slowly at you.",
-    "It seems content just existing next to you.",
-    "The room is quiet, except for a soft imaginary purr."
-  ],
-  hungry: [
-    "A tiny stomach growls in the void.",
-    "Those eyes say: 'Snack time. Again.'",
-    "It stares at you, then the food bowl, then you."
-  ],
-  full: [
-    "Too many snacks. Regrets are meowed softly.",
-    "It waddles a bit when it walks. Still cute.",
-    "You may have created a round creature."
-  ],
-  dirty: [
-    "Dust clings to its fur like bad decisions.",
-    "It really needs a bath. Or a brush. Or both.",
-    "You can almost see cartoon stink lines."
-  ],
-  sleepy: [
-    "Its head keeps drooping like a closing laptop.",
-    "It blinks slowly, then stays halfway shut.",
-    "You can practically hear the tiny yawns."
-  ],
-  happy: [
-    "Purr level: legendary.",
-    "Its tail flicks in little arcs of joy.",
-    "This is one extremely pleased little being."
-  ],
-  angry: [
-    "Tail flick: annoyed. Ears: mildly offended.",
-    "It gives you the side-eye of judgment.",
-    "Someone is one step away from tiny chaos."
-  ],
-  sick: [
-    "Your cat looks woozy. Definitely not okay.",
-    "Its eyes look dull. Needs help.",
-    "This is not regular sleepy. Something's wrong."
-  ],
-  lonely: [
-    "It looks around like it expected you sooner.",
-    "That slow blink feels a little sad today.",
-    "It curls tighter, like it's trying to be its own company."
-  ]
+  kitten: {
+    idle: [
+      "The tiny kitten blinks at you, unsure but curious.",
+      "It paws at the invisible screen edge."
+    ],
+    happy: [
+      "The kitten does awkward little hops of joy.",
+      "Tiny purrs buzz like a broken phone vibration."
+    ],
+    hungry: [
+      "The kitten squeaks, clearly hoping food appears by magic.",
+      "It noses an empty bowl that only exists in its mind."
+    ],
+    sleepy: [
+      "Its head droops, then jerks back up. Repeat.",
+      "The kitten fights sleep and is definitely losing."
+    ],
+    angry: [
+      "A baby hiss. Adorable, not very threatening.",
+      "It bats at you with a soft, offended paw."
+    ],
+    dirty: [
+      "Its fur is a wild static mess.",
+      "It looks like it rolled through imaginary crumbs."
+    ],
+    full: [
+      "The kitten flops over, belly gloriously round.",
+      "It makes a tiny satisfied chirp."
+    ],
+    sick: [
+      "The kitten looks woozy and too quiet.",
+      "Its ears droop; this isn't normal tired."
+    ],
+    lonely: [
+      "The kitten stares at the screen, waiting.",
+      "It curls into a ball, tail tucked for comfort."
+    ],
+    excited: [
+      "Zoomies. Pure, chaotic zoomies.",
+      "It darts around like the floor is lava."
+    ],
+    mischief: [
+      "You can tell it's plotting some nonsense.",
+      "Its eyes glint with tiny chaos."
+    ]
+  },
+  adult: {
+    idle: [
+      "Your cat lounges with practiced elegance.",
+      "It flicks its tail, perfectly content."
+    ],
+    happy: [
+      "A deep, steady purr fills the imaginary room.",
+      "It bumps its head against the fourth wall affectionately."
+    ],
+    hungry: [
+      "The stare. The bowl. The stare again.",
+      "You feel judged for not feeding it faster."
+    ],
+    sleepy: [
+      "A slow blink, then another, then stillness.",
+      "It kneads an invisible blanket before curling up."
+    ],
+    angry: [
+      "The tail flick says: 'unacceptable.'",
+      "Its ears angle back in dignified outrage."
+    ],
+    dirty: [
+      "It grooms itself aggressively, clearly annoyed.",
+      "A single speck of dust has personally offended it."
+    ],
+    full: [
+      "It stretches luxuriously, very pleased with the snacks.",
+      "A soft burp escapes. It pretends it didn't happen."
+    ],
+    sick: [
+      "Your cat looks dull and slow, eyes half-lidded.",
+      "No purring, just quiet discomfort."
+    ],
+    lonely: [
+      "It waits at the edge of the screen for you.",
+      "The slow blink feels just a little too long."
+    ],
+    excited: [
+      "Sudden frantic zoom across the tiny world.",
+      "It pounces on absolutely nothing with conviction."
+    ],
+    mischief: [
+      "It has That Look. Trouble is brewing.",
+      "You just know something would be knocked off a table."
+    ]
+  },
+  elder: {
+    idle: [
+      "The old cat rests with wise calm.",
+      "It watches you like it has seen everything."
+    ],
+    happy: [
+      "A low, rumbling purr vibrates through time.",
+      "It leans in, trusting and gentle."
+    ],
+    hungry: [
+      "A polite but insistent stare meets you.",
+      "It meows once, as if you should already know."
+    ],
+    sleepy: [
+      "Its eyes close slowly, paws tucked neatly.",
+      "This nap has been earned many times over."
+    ],
+    angry: [
+      "It narrows its eyes, unimpressed by your choices.",
+      "The tail tip twitches with ancient judgment."
+    ],
+    dirty: [
+      "A speck of dust stands no chance under slow, careful grooming.",
+      "It sighs as if it's done this a thousand times."
+    ],
+    full: [
+      "It settles in with a satisfied sigh.",
+      "Another meal successfully negotiated."
+    ],
+    sick: [
+      "The old cat looks fragile and still.",
+      "You feel a knot of worry in your chest."
+    ],
+    lonely: [
+      "It gazes toward where you usually appear.",
+      "Its slow blink carries a quiet request: stay a while."
+    ],
+    excited: [
+      "Even elders get bursts of kitten energy.",
+      "It plays in small, precise movements."
+    ],
+    mischief: [
+      "A tiny spark of old mischief returns.",
+      "You see a flicker of the kitten it once was."
+    ]
+  }
 };
 
 /* ---------------- CAT STATE ---------------- */
 let cat = {
   name: "Mochi",
+  personality: "balanced", // balanced, lazy, playful, grumpy, needy
   hunger: 50,
-  birth: Date.now(),
-  ageDays: 0,
-  stage: "kitten",   // kitten → adult → elder
   energy: 50,
   happiness: 50,
   cleanliness: 50,
@@ -356,23 +426,33 @@ let cat = {
   alive: false,
   lastCheck: Date.now(),
   isNapping: false,
-  napStart: null
+  napStart: null,
+  birth: Date.now(),
+  ageDays: 0,
+  stage: "kitten",           // kitten → adult → elder
+  lastBirthdayNotified: -1   // ageDays of last birthday message
 };
 
-/* Persistent history */
+/* History + mini-game state */
 let history = [];
-
 const DECAY_CHUNK_MINUTES = 10;
+
+let game = {
+  active: false,
+  score: 0,
+  endTime: 0,
+  timerId: null
+};
 
 /* ---------------- UTIL ---------------- */
 function save() {
-  localStorage.setItem("tamaCat", JSON.stringify(cat));
-  localStorage.setItem("tamaCatHistory", JSON.stringify(history));
+  localStorage.setItem("tamaCat_v5", JSON.stringify(cat));
+  localStorage.setItem("tamaCat_v5_history", JSON.stringify(history));
 }
 
 function load() {
-  const data = localStorage.getItem("tamaCat");
-  const hist = localStorage.getItem("tamaCatHistory");
+  const data = localStorage.getItem("tamaCat_v5");
+  const hist = localStorage.getItem("tamaCat_v5_history");
 
   if (data) cat = JSON.parse(data);
   if (hist) history = JSON.parse(hist);
@@ -381,10 +461,8 @@ function load() {
 function logMsg(msg) {
   const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
   const entry = `[${timestamp}] ${msg}`;
-
   history.unshift(entry);
-  if (history.length > 200) history.pop();
-
+  if (history.length > 300) history.pop();
   document.getElementById("log").innerHTML = history.join("<br>");
   save();
 }
@@ -410,9 +488,32 @@ function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/* ---------------- RENDER ---------------- */
+/* ---------------- AGE & STAGE ---------------- */
+function updateAge() {
+  const now = Date.now();
+  const days = Math.floor((now - cat.birth) / (1000 * 60 * 60 * 24));
+  const oldDays = cat.ageDays;
+  cat.ageDays = days;
+
+  // Stage thresholds
+  if (days < 3) cat.stage = "kitten";
+  else if (days < 10) cat.stage = "adult";
+  else cat.stage = "elder";
+
+  // Birthday events (every new day, starting from day 1)
+  if (days > 0 && days !== cat.lastBirthdayNotified) {
+    if (days !== oldDays) {
+      cat.happiness = Math.min(100, cat.happiness + 10);
+      logMsg("It's " + cat.name + "'s day " + days + " in this tiny world. Happy little birthday!");
+      beep(1200, 180);
+      cat.lastBirthdayNotified = days;
+    }
+  }
+}
+
+/* ---------------- MOOD & ART ---------------- */
 function getMoodAndArt() {
-  // Dead always overrides everything
+  // Dead overrides everything
   if (!cat.alive) {
     return {
       art: art[`${cat.stage}_dead`] || art.kitten_dead,
@@ -420,7 +521,7 @@ function getMoodAndArt() {
     };
   }
 
-  // Napping overrides mood
+  // Napping override
   if (cat.isNapping) {
     return {
       art: art[`${cat.stage}_sleepy`] || art.kitten_sleepy,
@@ -436,7 +537,7 @@ function getMoodAndArt() {
     };
   }
 
-  // Mood priority logic
+  // Mood priority
   if (cat.happiness < 20) {
     return {
       art: art[`${cat.stage}_lonely`] || art.kitten_lonely,
@@ -479,7 +580,7 @@ function getMoodAndArt() {
     };
   }
 
-  // Random fun moods for variety
+  // Random fun moods
   if (cat.happiness >= 50 && cat.energy >= 40) {
     const r = Math.random();
     if (r < 0.15) {
@@ -503,157 +604,84 @@ function getMoodAndArt() {
   };
 }
 
-
+/* ---------------- RENDER ---------------- */
 function render() {
   const screenTop = document.getElementById("screen-top");
   const screenBottom = document.getElementById("screen-bottom");
   const stats = document.getElementById("stats");
 
   const { art: artState, mood } = getMoodAndArt();
-
-  // Centered ASCII cat
   screenTop.innerHTML = "<pre>" + artState + "</pre>";
 
-  // Nap override
-  if (cat.isNapping && cat.alive) {
-    screenBottom.textContent = cat.name + " is napping...";
-  }
-  // Dead override
-  else if (mood === "dead") {
+  // Mini-game UI override
+  if (game.active) {
+    const secondsLeft = Math.max(0, Math.ceil((game.endTime - Date.now()) / 1000));
+    screenBottom.textContent =
+      "Mini-game: Mash PLAY!\n" +
+      "Score: " + game.score + "   Time: " + secondsLeft + "s";
+  } else if (!cat.alive) {
     screenBottom.textContent = cat.name + " is gone...";
-  }
-  // Sick override
-  else if (mood === "sick") {
-    screenBottom.textContent = randomChoice(dialog.sick);
-  }
-  // Normal mood dialogue
-  else if (dialog[mood]) {
-    screenBottom.textContent = randomChoice(dialog[mood]);
-  }
-  // Fallback
-  else {
-    screenBottom.textContent = randomChoice(dialog.idle);
+  } else if (cat.isNapping) {
+    screenBottom.textContent = cat.name + " is napping peacefully...";
+  } else {
+    const stageDialog = dialog[cat.stage] || dialog.kitten;
+    const lines = stageDialog[mood] || stageDialog.idle || dialog.kitten.idle;
+    screenBottom.textContent = randomChoice(lines);
   }
 
-  // Stats panel
-stats.textContent =
-  `Hunger:      ${cat.hunger}
+  stats.textContent =
+    `Hunger:      ${cat.hunger}
 Energy:      ${cat.energy}
 Happiness:   ${cat.happiness}
 Cleanliness: ${cat.cleanliness}
 Sick:        ${cat.sick ? "YES" : "NO"}
 Age:         ${cat.ageDays} days
-Stage:       ${cat.stage}`;
-  // Disable actions while napping or dead
-  const disable = cat.isNapping || !cat.alive;
-  document.getElementById("feed").disabled = disable;
-  document.getElementById("play").disabled = disable;
-  document.getElementById("clean").disabled = disable;
-  document.getElementById("med").disabled = disable;
+Stage:       ${cat.stage}
+Personality: ${cat.personality}`;
 
-  // Nap button toggles label
+  const disableActions = cat.isNapping || !cat.alive || game.active;
+  document.getElementById("feed").disabled = disableActions;
+  document.getElementById("play").disabled = !cat.alive;
+  document.getElementById("clean").disabled = disableActions;
+  document.getElementById("med").disabled = disableActions;
+  document.getElementById("game").disabled = !cat.alive || game.active;
+
   document.getElementById("nap").textContent = cat.isNapping ? "Wake" : "Nap";
-
-  // Nap button only disabled if dead
-  document.getElementById("nap").disabled = !cat.alive;
+  document.getElementById("nap").disabled = !cat.alive || game.active;
 }
 
-function updateAge() {
-  const now = Date.now();
-  const days = Math.floor((now - cat.birth) / (1000 * 60 * 60 * 24));
+/* ---------------- PERSONALITY HELPERS ---------------- */
+function applyPersonalityModifiers(action, deltas) {
+  // deltas = { hunger, energy, happiness, cleanliness }
+  const p = cat.personality;
 
-  cat.ageDays = days;
+  // Clone to avoid side effects
+  const result = {...deltas};
 
-  // Growth stages
-  if (days < 3) {
-    cat.stage = "kitten";
-  } else if (days < 10) {
-    cat.stage = "adult";
-  } else {
-    cat.stage = "elder";
+  if (p === "lazy") {
+    if (action === "nap") result.energy = Math.round(result.energy * 1.3);
+    if (action === "play") result.energy = Math.round(result.energy * 1.2);
   }
+
+  if (p === "playful") {
+    if (action === "play") result.happiness = Math.round(result.happiness * 1.4);
+  }
+
+  if (p === "grumpy") {
+    if (action === "clean") result.happiness = Math.round(result.happiness * 1.4 * -1);
+    if (action === "feed") result.happiness = Math.round(result.happiness * 0.7);
+  }
+
+  if (p === "needy") {
+    if (action === "play" || action === "feed" || action === "clean") {
+      result.happiness = Math.round(result.happiness * 1.2);
+    }
+  }
+
+  return result;
 }
-  
+
 /* ---------------- TIME DECAY + NAP RECOVERY ---------------- */
-function applyTimeDecay() {
-  const now = Date.now();
-  const diffMinutes = Math.floor((now - cat.lastCheck) / (1000 * 60));
-
-  if (diffMinutes <= 0) return;
-
-  let chunks = Math.floor(diffMinutes / DECAY_CHUNK_MINUTES);
-  if (chunks < 1) chunks = 1;
-
-  if (!cat.isNapping) {
-    cat.hunger -= 4 * chunks;
-    cat.energy -= 3 * chunks;
-    cat.cleanliness -= 3 * chunks;
-    cat.happiness -= 3 * chunks;
-    updateAge();
-  }
-if (cat.isNapping && cat.napStart) {
-  const napMinutes = Math.floor((now - cat.napStart) / (1000 * 60));
-
-  if (napMinutes > 0) {
-    // Continuous gain: +5 energy per minute
-    const energyGain = napMinutes * 5;
-
-    // Per-minute nap drain
-    const hungerDrain = napMinutes * 1;     // -1 hunger per minute
-    const cleanDrain  = napMinutes * 2;     // -2 cleanliness per minute
-
-    cat.energy += energyGain;
-    cat.hunger -= hungerDrain;
-    cat.cleanliness -= cleanDrain;
-
-    // Reset nap timer
-    cat.napStart = now;
-
-    logMsg(
-      `${cat.name} slept for ${napMinutes} min: `
-      + `+${energyGain} energy, -${hungerDrain} hunger, -${cleanDrain} cleanliness.`
-    );
-  }
-
-  // Cap energy + auto-wake
-  if (cat.energy >= 100) {
-    cat.energy = 100;
-    cat.isNapping = false;
-    logMsg(cat.name + " wakes up fully rested.");
-    beep(900, 120);
-  }
-}
-  if (diffMinutes >= 60 && !cat.isNapping) {
-    cat.sick = true;
-    logMsg("Your cat felt ignored for a long time and became sick.");
-    beep(500, 200);
-  }
-
-  cat.lastCheck = now;
-  clamp();
-  checkAlive();
-}
-
-/* ---------------- SICKNESS ---------------- */
-function sicknessCheck() {
-  if (cat.hunger > 95) {
-    cat.sick = true;
-    logMsg(cat.name + " overate and feels sick.");
-    beep(400, 200);
-  }
-  if (cat.cleanliness < 10) {
-    cat.sick = true;
-    logMsg(cat.name + " is sick from being too dirty.");
-    beep(400, 200);
-  }
-  if (cat.energy < 5) {
-    cat.sick = true;
-    logMsg(cat.name + " is sick from exhaustion.");
-    beep(400, 200);
-  }
-}
-
-/* ---------------- HELPERS ---------------- */
 function clamp() {
   ["hunger","energy","happiness","cleanliness"].forEach(k => {
     cat[k] = Math.max(0, Math.min(100, cat[k]));
@@ -667,16 +695,91 @@ function checkAlive() {
       beep(200, 400);
     }
     cat.alive = false;
+    cat.isNapping = false;
+    cat.napStart = null;
+    if (game.active) {
+      clearInterval(game.timerId);
+      game.active = false;
+    }
   }
+}
+
+function sicknessCheck() {
+  if (cat.hunger > 95 || cat.cleanliness < 10 || cat.energy < 5) {
+    if (!cat.sick) {
+      cat.sick = true;
+      logMsg(cat.name + " has become sick.");
+      beep(400, 200);
+    }
+  }
+}
+
+function applyTimeDecay() {
+  const now = Date.now();
+  const diffMinutes = Math.floor((now - cat.lastCheck) / (1000 * 60));
+  if (diffMinutes <= 0) {
+    updateAge();
+    return;
+  }
+
+  let chunks = Math.floor(diffMinutes / DECAY_CHUNK_MINUTES);
+  if (chunks < 1) chunks = 1;
+
+  // Regular decay only when not napping and alive
+  if (!cat.isNapping && cat.alive) {
+    cat.hunger -= 4 * chunks;
+    cat.energy -= 3 * chunks;
+    cat.cleanliness -= 3 * chunks;
+    cat.happiness -= 3 * chunks;
+  }
+
+  // Nap recovery + drains
+  if (cat.isNapping && cat.napStart && cat.alive) {
+    const napMinutes = Math.floor((now - cat.napStart) / (1000 * 60));
+    if (napMinutes > 0) {
+      const energyGain = napMinutes * 5;   // +5 per minute
+      const hungerDrain = napMinutes * 1;  // -1 per minute
+      const cleanDrain  = napMinutes * 2;  // -2 per minute
+
+      cat.energy += energyGain;
+      cat.hunger -= hungerDrain;
+      cat.cleanliness -= cleanDrain;
+
+      cat.napStart = now;
+
+      logMsg(
+        `${cat.name} slept for ${napMinutes} min: +${energyGain} energy, -${hungerDrain} hunger, -${cleanDrain} cleanliness.`
+      );
+
+      if (cat.energy >= 100) {
+        cat.energy = 100;
+        cat.isNapping = false;
+        logMsg(cat.name + " wakes up fully rested.");
+        beep(900, 120);
+      }
+    }
+  }
+
+  cat.lastCheck = now;
+  clamp();
+  sicknessCheck();
+  checkAlive();
+  updateAge();
 }
 
 /* ---------------- ACTIONS ---------------- */
 function actFeed() {
-  if (!cat.alive) return;
-  cat.hunger += 18;
-  cat.happiness += 4;
+  if (!cat.alive || game.active) return;
+
+  let deltas = { hunger: +18, energy: 0, happiness: +4, cleanliness: 0 };
+  deltas = applyPersonalityModifiers("feed", deltas);
+
+  cat.hunger += deltas.hunger;
+  cat.energy += deltas.energy;
+  cat.happiness += deltas.happiness;
+
   clamp();
-  logMsg("You feed " + cat.name + ". Tiny crunch sounds ensue.");
+  logMsg("You feed " + cat.name + ". Tiny crunches echo in the void.");
   beep(900, 80);
   sicknessCheck();
   tick();
@@ -684,9 +787,22 @@ function actFeed() {
 
 function actPlay() {
   if (!cat.alive) return;
-  cat.energy -= 12;
-  cat.happiness += 15;
-  cat.hunger -= 5;
+
+  // If mini-game is active, PLAY is the game button
+  if (game.active) {
+    game.score += 1;
+    beep(1100, 60);
+    render();
+    return;
+  }
+
+  let deltas = { hunger: -5, energy: -12, happiness: +15, cleanliness: 0 };
+  deltas = applyPersonalityModifiers("play", deltas);
+
+  cat.hunger += deltas.hunger;
+  cat.energy += deltas.energy;
+  cat.happiness += deltas.happiness;
+
   clamp();
   logMsg(cat.name + " goes wild with zoomies.");
   beep(1000, 80);
@@ -695,68 +811,122 @@ function actPlay() {
 }
 
 function actClean() {
-  if (!cat.alive) return;
-cat.cleanliness += 25;
-cat.happiness -= 4;
+  if (!cat.alive || game.active) return;
+
+  let deltas = { hunger: 0, energy: 0, happiness: -4, cleanliness: +25 };
+  deltas = applyPersonalityModifiers("clean", deltas);
+
+  cat.hunger += deltas.hunger;
+  cat.energy += deltas.energy;
+  cat.happiness += deltas.happiness;
+  cat.cleanliness += deltas.cleanliness;
+
   clamp();
-  logMsg("You groom " + cat.name + " until the fur shines, but they clearly resent it.");
+  logMsg("You clean " + cat.name + ". It looks better, but clearly resents it.");
   beep(850, 80);
   sicknessCheck();
   tick();
 }
 
 function actNap() {
-  if (!cat.alive) return;
+  if (!cat.alive || game.active) return;
 
-// If already napping → cancel nap
-if (cat.isNapping) {
-  cat.isNapping = false;
-  cat.napStart = null;
+  // Cancel nap if already napping
+  if (cat.isNapping) {
+    cat.isNapping = false;
+    cat.napStart = null;
+    logMsg(cat.name + " wakes up early from the nap.");
+    beep(950, 120);
+    clamp();
+    sicknessCheck();
+    tick();
+    return;
+  }
 
-  logMsg(cat.name + " wakes up early from the nap.");
-  beep(950, 120);
-
-  clamp();
-  sicknessCheck();
-
-  tick();     // updates stats + saves
-  render();   // <-- forces immediate face update
-
-  return;
-}
-
-  // Start a new nap
   cat.isNapping = true;
   cat.napStart = Date.now();
 
-  logMsg(cat.name + " curls up and begins a long nap.");
-  beep(700, 80);
+  let deltas = { hunger: -3, energy: 0, happiness: +3, cleanliness: 0 };
+  deltas = applyPersonalityModifiers("nap", deltas);
 
-  cat.happiness += 3;
-  cat.hunger -= 3;
+  cat.hunger += deltas.hunger;
+  cat.happiness += deltas.happiness;
+
   clamp();
   sicknessCheck();
+  logMsg(cat.name + " curls up and begins a long nap.");
+  beep(700, 80);
   tick();
 }
 
-
 function actMed() {
-  if (!cat.alive) return;
+  if (!cat.alive || game.active) return;
+
   if (!cat.sick) {
     logMsg(cat.name + " doesn't need medicine right now.");
     return;
   }
+
   cat.sick = false;
-  cat.happiness -= 10;
-  clamp();
+  cat.happiness = Math.min(100, cat.happiness + 10);
   logMsg("You give " + cat.name + " medicine. It looks better already.");
   beep(1100, 120);
+  tick();
+}
+
+/* ---------------- MINI-GAME ---------------- */
+function startMiniGame() {
+  if (!cat.alive || game.active || cat.isNapping) return;
+
+  game.active = true;
+  game.score = 0;
+  game.endTime = Date.now() + 10000; // 10 seconds
+
+  logMsg("Mini-game started! Mash PLAY to cheer up " + cat.name + "!");
+  beep(1200, 100);
+
+  if (game.timerId) clearInterval(game.timerId);
+  game.timerId = setInterval(() => {
+    if (!game.active) {
+      clearInterval(game.timerId);
+      return;
+    }
+    if (Date.now() >= game.endTime) {
+      endMiniGame();
+    } else {
+      render();
+    }
+  }, 150);
+
+  render();
+}
+
+function endMiniGame() {
+  if (!game.active) return;
+
+  game.active = false;
+  clearInterval(game.timerId);
+
+  const rewardHappiness = Math.min(30, game.score * 2);
+  const costEnergy = Math.min(20, Math.floor(game.score / 2));
+
+  cat.happiness = Math.min(100, cat.happiness + rewardHappiness);
+  cat.energy = Math.max(0, cat.energy - costEnergy);
+
+  clamp();
+  logMsg(
+    `Mini-game over! Score: ${game.score}. ` +
+    `Happiness +${rewardHappiness}, Energy -${costEnergy}.`
+  );
+  beep(900, 140);
+  sicknessCheck();
   tick();
 }
 
 /* ---------------- TICK & INIT ---------------- */
 function tick() {
   cat.lastCheck = Date.now();
+  clamp();
   checkAlive();
   updateAge();
   save();
@@ -765,6 +935,7 @@ function tick() {
 
 function startGame() {
   cat.name = document.getElementById("name-input").value.trim() || "Mochi";
+  cat.personality = document.getElementById("personality-select").value;
   cat.hunger = 50;
   cat.energy = 50;
   cat.happiness = 50;
@@ -773,7 +944,16 @@ function startGame() {
   cat.alive = true;
   cat.isNapping = false;
   cat.napStart = null;
+  cat.birth = Date.now();
+  cat.ageDays = 0;
+  cat.stage = "kitten";
+  cat.lastBirthdayNotified = -1;
   cat.lastCheck = Date.now();
+
+  if (game.timerId) clearInterval(game.timerId);
+  game.active = false;
+  game.score = 0;
+
   save();
   render();
   logMsg(cat.name + " wakes up in the tiny screen.");
@@ -787,8 +967,9 @@ document.getElementById("play").onclick = actPlay;
 document.getElementById("clean").onclick = actClean;
 document.getElementById("nap").onclick = actNap;
 document.getElementById("med").onclick = actMed;
+document.getElementById("game").onclick = startMiniGame;
 
-/* Load previous cat + history */
+/* Load previous state */
 load();
 applyTimeDecay();
 
