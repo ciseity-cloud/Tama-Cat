@@ -491,15 +491,22 @@ function actClean() {
 function actNap() {
   if (!cat.alive) return;
 
-  // If already napping → cancel nap
-  if (cat.isNapping) {
-    cat.isNapping = false;
-    cat.napStart = null;
-    logMsg(cat.name + " wakes up early from the nap.");
-    beep(950, 120);
-    tick();
-    return;
-  }
+// If already napping → cancel nap
+if (cat.isNapping) {
+  cat.isNapping = false;
+  cat.napStart = null;
+
+  logMsg(cat.name + " wakes up early from the nap.");
+  beep(950, 120);
+
+  clamp();
+  sicknessCheck();
+
+  tick();     // updates stats + saves
+  render();   // <-- forces immediate face update
+
+  return;
+}
 
   // Start a new nap
   cat.isNapping = true;
