@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tama‑Cat v5</title>
+<title>Tama‑Cat v5.1</title>
 <style>
   body {
     background: #050608;
@@ -60,8 +60,8 @@
 
   .screen-top pre {
     margin: 0;
-    font-size: 12px;
-    line-height: 12px;
+    font-size: 11px;
+    line-height: 11px;
   }
 
   .screen-bottom {
@@ -147,13 +147,14 @@
     <button id="nap">Nap</button>
     <button id="med">Med</button>
     <button id="game">Game</button>
+    <button id="env">Env</button>
   </div>
 
   <div id="log"></div>
 </div>
 
 <script>
-/* ---------------- ASCII ART ---------------- */
+/* ---------------- ASCII CAT ART ---------------- */
 // Each key is `${stage}_${mood}`
 const art = {
   // KITTEN
@@ -271,8 +272,81 @@ const art = {
  (  =w=  )`
 };
 
+/* ---------------- SURROUNDINGS / ENVIRONMENTS ---------------- */
+// Wrapper functions: surroundings[env](catArt) -> big ASCII block
+const surroundings = {
+  floor: (catArt) => {
+    const lines = catArt.split("\n").map(l => "   " + l);
+    return `
+   ┌───────────────┐
+   │               │
+${lines.map(l => "   │" + l.padEnd(15, " ") + "│").join("\n")}
+   │               │
+   └───────┬───────┘
+           │
+        ( floor )
+`.trim();
+  },
+
+  bed: (catArt) => {
+    const lines = catArt.split("\n").map(l => "   " + l);
+    return `
+   ╭───────────────╮
+   │   soft bed    │
+${lines.map(l => "   │" + l.padEnd(15, " ") + "│").join("\n")}
+   ╰───────────────╯
+        z  z  z
+`.trim();
+  },
+
+  tower: (catArt) => {
+    const lines = catArt.split("\n").map(l => "   " + l);
+    return `
+      🐾 Cat Tower 🐾
+   ╔═════════════════╗
+${lines.map(l => "   ║" + l.padEnd(15, " ") + "║").join("\n")}
+   ╚═══════╦═════════╝
+           ║
+        ╔══╩══╗
+        ║ base║
+        ╚═════╝
+`.trim();
+  },
+
+  window: (catArt) => {
+    const lines = catArt.split("\n").map(l => "   " + l);
+    return `
+   🌤️  Window View  🌤️
+  ┌───────────────────┐
+${lines.map(l => "  │" + l.padEnd(17, " ") + "│").join("\n")}
+  └───────────────────┘
+      birds chirping
+`.trim();
+  },
+
+  box: (catArt) => {
+    const lines = catArt.split("\n").map(l => "   " + l);
+    return `
+      📦 Cardboard Box 📦
+   ┌───────────────────┐
+${lines.map(l => "   │" + l.padEnd(17, " ") + "│").join("\n")}
+   └───────────────────┘
+     (cats love boxes)
+`.trim();
+  },
+
+  blanket: (catArt) => {
+    const lines = catArt.split("\n").map(l => "   " + l);
+    return `
+   ~~~~~~~~~~~~~~~~~~~~~
+   ~   cozy blanket    ~
+${lines.map(l => "   ~" + l.padEnd(17, " ") + "~").join("\n")}
+   ~~~~~~~~~~~~~~~~~~~~~
+`.trim();
+  }
+};
+
 /* ---------------- STAGE-SPECIFIC DIALOGUE ---------------- */
-// dialog[stage][mood] = [lines...]
 const dialog = {
   kitten: {
     idle: [
@@ -430,7 +504,9 @@ let cat = {
   birth: Date.now(),
   ageDays: 0,
   stage: "kitten",           // kitten → adult → elder
-  lastBirthdayNotified: -1   // ageDays of last birthday message
+  lastBirthdayNotified: -1,  // ageDays of last birthday message
+  environment: "floor",      // floor, bed, tower, window, box, blanket
+  environmentAuto: true      // true = auto-switch with stage, false = manual override
 };
 
 /* History + mini-game state */
@@ -446,13 +522,13 @@ let game = {
 
 /* ---------------- UTIL ---------------- */
 function save() {
-  localStorage.setItem("tamaCat_v5", JSON.stringify(cat));
-  localStorage.setItem("tamaCat_v5_history", JSON.stringify(history));
+  localStorage.setItem("tamaCat_v5_1", JSON.stringify(cat));
+  localStorage.setItem("tamaCat_v5_1_history", JSON.stringify(history));
 }
 
 function load() {
-  const data = localStorage.getItem("tamaCat_v5");
-  const hist = localStorage.getItem("tamaCat_v5_history");
+  const data = localStorage.getItem("tamaCat_v5_1");
+  const hist = localStorage.getItem("tamaCat_v5_1_history");
 
   if (data) cat = JSON.parse(data);
   if (hist) history = JSON.parse(hist);
@@ -488,17 +564,47 @@ function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/* ---------------- ENVIRONMENT PREFERENCES ---------------- */
+// Combine stage + personality to pick a preferred environment
+function getPreferredEnvironment() {
+  const st = cat.stage;
+  const p = cat.personality;
+
+  // Stage defaults
+  let env = "floor";
+  if (st === "kitten") env = "bed";
+  else if (st === "adult") env = "tower";
+  else if (st === "elder") env = "blanket";
+
+  // Personality tweaks
+  if (p === "lazy") env = "bed";
+  if (p === "playful") env = "tower";
+  if (p === "grumpy") env = "box";
+  if (p === "needy") env = "blanket";
+  if (p === "balanced" && st === "adult") env = "window";
+
+  return env;
+}
+
 /* ---------------- AGE & STAGE ---------------- */
 function updateAge() {
   const now = Date.now();
   const days = Math.floor((now - cat.birth) / (1000 * 60 * 60 * 24));
   const oldDays = cat.ageDays;
+  const oldStage = cat.stage;
+
   cat.ageDays = days;
 
   // Stage thresholds
   if (days < 3) cat.stage = "kitten";
   else if (days < 10) cat.stage = "adult";
   else cat.stage = "elder";
+
+  // If stage changed and environment is auto-managed, update it
+  if (cat.stage !== oldStage && cat.environmentAuto) {
+    cat.environment = getPreferredEnvironment();
+    logMsg(cat.name + " settles into a new favorite spot as they grow: " + cat.environment + ".");
+  }
 
   // Birthday events (every new day, starting from day 1)
   if (days > 0 && days !== cat.lastBirthdayNotified) {
@@ -611,7 +717,11 @@ function render() {
   const stats = document.getElementById("stats");
 
   const { art: artState, mood } = getMoodAndArt();
-  screenTop.innerHTML = "<pre>" + artState + "</pre>";
+
+  // Wrap cat art in current environment
+  const envWrapper = surroundings[cat.environment] || surroundings.floor;
+  const wrapped = envWrapper(artState);
+  screenTop.innerHTML = "<pre>" + wrapped + "</pre>";
 
   // Mini-game UI override
   if (game.active) {
@@ -637,7 +747,8 @@ Cleanliness: ${cat.cleanliness}
 Sick:        ${cat.sick ? "YES" : "NO"}
 Age:         ${cat.ageDays} days
 Stage:       ${cat.stage}
-Personality: ${cat.personality}`;
+Personality: ${cat.personality}
+Env:         ${cat.environment}${cat.environmentAuto ? " (auto)" : ""}`;
 
   const disableActions = cat.isNapping || !cat.alive || game.active;
   document.getElementById("feed").disabled = disableActions;
@@ -648,14 +759,12 @@ Personality: ${cat.personality}`;
 
   document.getElementById("nap").textContent = cat.isNapping ? "Wake" : "Nap";
   document.getElementById("nap").disabled = !cat.alive || game.active;
+  document.getElementById("env").disabled = !cat.alive || game.active;
 }
 
 /* ---------------- PERSONALITY HELPERS ---------------- */
 function applyPersonalityModifiers(action, deltas) {
-  // deltas = { hunger, energy, happiness, cleanliness }
   const p = cat.personality;
-
-  // Clone to avoid side effects
   const result = {...deltas};
 
   if (p === "lazy") {
@@ -788,7 +897,7 @@ function actFeed() {
 function actPlay() {
   if (!cat.alive) return;
 
-  // If mini-game is active, PLAY is the game button
+  // Mini-game button
   if (game.active) {
     game.score += 1;
     beep(1100, 60);
@@ -874,6 +983,21 @@ function actMed() {
   tick();
 }
 
+function changeEnvironmentManual() {
+  if (!cat.alive || game.active) return;
+
+  const options = ["floor", "bed", "tower", "window", "box", "blanket"];
+  const currentIndex = options.indexOf(cat.environment);
+  const nextEnv = options[(currentIndex + 1) % options.length];
+
+  cat.environment = nextEnv;
+  cat.environmentAuto = false; // manual override from now on
+  logMsg(cat.name + " moves to the " + nextEnv + ".");
+  beep(800, 80);
+  save();
+  render();
+}
+
 /* ---------------- MINI-GAME ---------------- */
 function startMiniGame() {
   if (!cat.alive || game.active || cat.isNapping) return;
@@ -949,6 +1073,8 @@ function startGame() {
   cat.stage = "kitten";
   cat.lastBirthdayNotified = -1;
   cat.lastCheck = Date.now();
+  cat.environmentAuto = true;
+  cat.environment = getPreferredEnvironment();
 
   if (game.timerId) clearInterval(game.timerId);
   game.active = false;
@@ -968,6 +1094,7 @@ document.getElementById("clean").onclick = actClean;
 document.getElementById("nap").onclick = actNap;
 document.getElementById("med").onclick = actMed;
 document.getElementById("game").onclick = startMiniGame;
+document.getElementById("env").onclick = changeEnvironmentManual;
 
 /* Load previous state */
 load();
