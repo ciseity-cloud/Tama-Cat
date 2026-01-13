@@ -420,6 +420,14 @@ if (cat.isNapping && cat.napStart) {
     beep(900, 120);
   }
 }
+  // Cap energy + auto-wake
+  if (cat.energy >= 100) {
+    cat.energy = 100;
+    cat.isNapping = false;
+    logMsg(cat.name + " wakes up fully rested.");
+    beep(900, 120);
+  }
+}
 
   // Cap energy
   if (cat.energy >= 100) {
